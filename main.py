@@ -1,4 +1,10 @@
-import tkinter as tk
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.prompt import Prompt
+from rich.text import Text
+
+console = Console()
 
 gabarito = "0123456789ABCDEF" #para o computador saber o valor de cada base pela posição do caractere na frase
 
@@ -40,81 +46,175 @@ def executar_conversao(texto_inserido, base_original):
     hexa = conversao_bases(valor_puro, 16) #pega a farinha e manda pro padeiro pedindo o pão no tamanho 16, e guarda o pão pronto nessa caixa 'hexa'
     dec = str(valor_puro)
     return bina, octal, hexa, dec #manda todos os pães pro cliente
-print(executar_conversao("57", 3))
 
-""" # 1. Variáveis de Estado (A Memória da Calculadora)
-texto_digitado = ""
-base_selecionada = 10 # Começamos assumindo que é Decimal por padrão
 
-# 2. Funções de Ação da Interface
-def apertar_numero(numero):
-    global texto_digitado
-    texto_digitado = texto_digitado + str(numero)
-    visor_entrada.config(text=texto_digitado)
+# ============================================================================
+# CAMADA DE VALIDAÇÃO E INTERFACE COM RICH
+# ============================================================================
 
-def selecionar_base(base):
-    global base_selecionada
-    base_selecionada = base
-    visor_base.config(text=f"Base: {base}")
+def exibir_titulo():
+    """Exibe o painel de título do conversor"""
+    titulo = Panel(
+        "[bold cyan]🔢 CONVERSOR DE BASES NUMÉRICAS A3[/bold cyan]",
+        border_style="cyan",
+        padding=(1, 2)
+    )
+    console.print(titulo)
 
-def apertar_enter():
-    # Aqui o Frontend chama o seu Maestro!
-    bina, octal, hexa, dec = executar_conversao(texto_digitado, base_selecionada)
+
+def validar_base(base_input):
+    """Valida se a base inserida é válida (2, 8, 10 ou 16)"""
+    try:
+        base = int(base_input.strip())
+        if base not in [2, 8, 10, 16]:
+            console.print(
+                Panel(
+                    "[bold red]❌ ERRO: Base inválida![/bold red]\n"
+                    "As bases válidas são: [bold yellow]2, 8, 10, 16[/bold yellow]",
+                    border_style="red"
+                )
+            )
+            return None
+        return base
+    except ValueError:
+        console.print(
+            Panel(
+                "[bold red]❌ ERRO: Digite um número inteiro![/bold red]",
+                border_style="red"
+            )
+        )
+        return None
+
+
+def obter_caracteres_validos(base):
+    """Retorna os caracteres válidos para uma base específica"""
+    return gabarito[:base]
+
+
+def validar_numero(numero_input, base):
+    """Valida se o número contém apenas caracteres da base especificada"""
+    numero = numero_input.strip().upper()
     
-    # E atualiza as telas com as respostas
-    visor_bin.config(text=bina)
-    visor_oct.config(text=octal)
-    visor_hex.config(text=hexa)
-    visor_dec.config(text=dec)
+    # Verifica se está vazio
+    if not numero:
+        console.print(
+            Panel(
+                "[bold red]❌ ERRO: Digite um número![/bold red]",
+                border_style="red"
+            )
+        )
+        return None
+    
+    # Verifica se contém sinal negativo
+    if numero.startswith('-') or numero.startswith('+'):
+        console.print(
+            Panel(
+                "[bold red]❌ ERRO: Números negativos não são permitidos![/bold red]",
+                border_style="red"
+            )
+        )
+        return None
+    
+    # Verifica se todos os caracteres são válidos para a base
+    caracteres_validos = obter_caracteres_validos(base)
+    for char in numero:
+        if char not in caracteres_validos:
+            console.print(
+                Panel(
+                    f"[bold red]❌ ERRO: Caractere inválido '{char}'![/bold red]\n"
+                    f"Para a base {base}, use apenas: [bold yellow]{caracteres_validos}[/bold yellow]",
+                    border_style="red"
+                )
+            )
+            return None
+    
+    return numero
 
-def limpar_tela():
-    global texto_digitado
-    texto_digitado = ""
-    visor_entrada.config(text="")
-    visor_bin.config(text="")
-    visor_oct.config(text="")
-    visor_hex.config(text="")
-    visor_dec.config(text="")
 
-# 3. Montando a Janela Principal
-janela = tk.Tk()
-janela.title("Conversor de Bases A3")
-janela.geometry("500x700") # Mude para o tamanho exato da sua imagem do Canva
+def exibir_resultados(numero_original, base_original, bina, octal, hexa, dec):
+    """Exibe os resultados em uma tabela formatada com Rich"""
+    table = Table(title="[bold cyan]📊 RESULTADOS DA CONVERSÃO[/bold cyan]", border_style="cyan")
+    
+    table.add_column("Base", style="bold magenta", width=15)
+    table.add_column("Resultado", style="bold green", width=30)
+    
+    table.add_row("Binário (2)", bina)
+    table.add_row("Octal (8)", octal)
+    table.add_row("Decimal (10)", dec)
+    table.add_row("Hexadecimal (16)", hexa)
+    
+    console.print("\n")
+    console.print(f"[bold white]Número Original:[/bold white] [bold yellow]{numero_original}[/bold yellow] (Base {base_original})")
+    console.print(table)
+    console.print()
 
-# 4. Colando a sua Arte de Fundo
-# Salve a imagem do Canva na mesma pasta do código com o nome 'fundo.png'
-# IMPORTANTE: Tire o # das duas linhas abaixo quando a imagem estiver lá!
-# imagem_fundo = tk.PhotoImage(file="fundo.png")
-# tk.Label(janela, image=imagem_fundo).place(x=0, y=0)
 
-# 5. Criando os Visores (As telas onde os números aparecem)
-# O bg="white" é a cor de fundo. Depois você muda para a cor do seu desenho.
-visor_entrada = tk.Label(janela, text="", font=("Arial", 20), bg="white")
-visor_entrada.place(x=50, y=50, width=400, height=40)
+def loop_principal():
+    """Loop principal do conversor com validação robusta"""
+    exibir_titulo()
+    
+    while True:
+        try:
+            # Solicita a base de origem
+            console.print("[bold cyan]Selecione a base de origem:[/bold cyan]")
+            base_input = Prompt.ask("  Bases permitidas: 2, 8, 10, 16", default="10")
+            base_origem = validar_base(base_input)
+            
+            if base_origem is None:
+                continue
+            
+            # Solicita o número a ser convertido
+            console.print(f"\n[bold cyan]Digite o número em base {base_origem}:[/bold cyan]")
+            caracteres_validos = obter_caracteres_validos(base_origem)
+            numero = validar_numero(
+                Prompt.ask(f"  Caracteres válidos: {caracteres_validos}"),
+                base_origem
+            )
+            
+            if numero is None:
+                continue
+            
+            # Executa a conversão
+            try:
+                bina, octal, hexa, dec = executar_conversao(numero, base_origem)
+                exibir_resultados(numero, base_origem, bina, octal, hexa, dec)
+            except Exception as e:
+                console.print(
+                    Panel(
+                        f"[bold red]❌ ERRO na Conversão:[/bold red]\n{str(e)}",
+                        border_style="red"
+                    )
+                )
+                continue
+            
+            # Pergunta se deseja fazer outra conversão
+            novamente = Prompt.ask(
+                "\n[bold yellow]Deseja fazer outra conversão?[/bold yellow]",
+                choices=["sim", "não"],
+                default="sim"
+            )
+            
+            if novamente.lower() == "não":
+                console.print(
+                    Panel(
+                        "[bold green]✅ Obrigado por usar o Conversor de Bases![/bold green]",
+                        border_style="green",
+                        padding=(1, 2)
+                    )
+                )
+                break
+            
+            console.print("\n" + "="*60 + "\n")
+        
+        except KeyboardInterrupt:
+            console.print(
+                Panel(
+                    "[bold red]⚠️  Programa interrompido pelo usuário.[/bold red]",
+                    border_style="red"
+                )
+            )
+            break
 
-visor_base = tk.Label(janela, text="Base: 10", font=("Arial", 12), bg="white")
-visor_base.place(x=50, y=100, width=100, height=20)
 
-visor_bin = tk.Label(janela, text="", font=("Arial", 14), bg="lightgray")
-visor_bin.place(x=50, y=150, width=400, height=30)
-# (Repita a criação de visores para Octal, Hexa e Dec...)
-
-# 6. Criando os Botões Invisíveis
-# O comando lambda serve para "segurar" o número até o botão ser clicado
-btn_1 = tk.Button(janela, text="1", command=lambda: apertar_numero("1"))
-btn_1.place(x=50, y=300, width=50, height=50)
-
-btn_A = tk.Button(janela, text="A", command=lambda: apertar_numero("A"))
-btn_A.place(x=110, y=300, width=50, height=50)
-
-btn_base_bin = tk.Button(janela, text="BIN", command=lambda: selecionar_base(2))
-btn_base_bin.place(x=50, y=250, width=50, height=30)
-
-btn_enter = tk.Button(janela, text="ENTER", command=apertar_enter)
-btn_enter.place(x=200, y=500, width=100, height=50)
-
-btn_limpar = tk.Button(janela, text="C", command=limpar_tela)
-btn_limpar.place(x=350, y=500, width=50, height=50)
-
-# Inicia o programa
-janela.mainloop() """
+if __name__ == "__main__":
+    loop_principal()

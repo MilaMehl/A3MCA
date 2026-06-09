@@ -48,10 +48,6 @@ def executar_conversao(texto_inserido, base_original):
     return bina, octal, hexa, dec #manda todos os pães pro cliente
 
 
-# ============================================================================
-# CAMADA DE VALIDAÇÃO E INTERFACE COM RICH
-# ============================================================================
-
 def exibir_titulo():
     """Exibe o painel de título do conversor"""
     titulo = Panel(

@@ -1,4 +1,4 @@
-# Conversor de Bases Numéricas (Engine Matemático do Zero)
+# Conversor de Bases Numéricas
 
 Este projeto é um conversor de bases numéricas desenvolvido em Python. O diferencial de sua arquitetura é a **ausência total de bibliotecas nativas de conversão** (como `bin()`, `hex()` ou `int(num, base)`). O motor matemático foi construído estritamente a partir do zero, aplicando os fundamentos de Matemática Computacional.
 

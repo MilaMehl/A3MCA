@@ -27,7 +27,7 @@ A interface está blindada contra os seguintes cenários de falha:
 
 Para testar o programa, não é necessário ter o Python ou qualquer dependência instalada na sua máquina. O projeto foi compilado em um executável autônomo (`.exe`).
 
-1. Baixe o executável diretamente por este link: [COLE SEU LINK DO DRIVE AQUI]
+1. Baixe o executável diretamente por este link:(https://drive.google.com/file/d/1BR3d7haQWoUwP4vZod0kMGzzaEHyN70-/view?usp=drive_link)
 2. Dê um duplo clique no arquivo baixado.
 3. O terminal interativo será aberto automaticamente.
 
